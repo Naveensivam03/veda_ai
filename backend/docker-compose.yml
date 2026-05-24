@@ -1,30 +1,74 @@
-version: '3.8'
-
 services:
-  mongo:
-    image: mongo:6.0
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vedaai-backend
     restart: unless-stopped
+    command: bun run dev
+    env_file:
+      - .env
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-example}
-      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-ve_db}
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/vedaai
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
-      - "${MONGO_PORT:-27017}:27017"
+      - "5000:5000"
     volumes:
-      - mongo_data:/data/db
-
-  mongo-express:
-    image: mongo-express:1.0.0
-    restart: unless-stopped
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_INITDB_ROOT_USERNAME:-root}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-example}
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_URL: "${MONGO_URI:-mongodb://root:example@mongo:27017/ve_db?authSource=admin}"
-    ports:
-      - "8081:8081"
+      - .:/app
     depends_on:
-      - mongo
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vedaai-worker
+    restart: unless-stopped
+    command: bun run worker
+    env_file:
+      - .env
+    environment:
+      PORT: 5000
+      MONGODB_URI: mongodb://mongodb:27017/vedaai
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    volumes:
+      - .:/app
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  mongodb:
+    image: mongo:7
+    container_name: vedaai-mongodb
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    # Redis is intentionally internal-only; backend and worker reach it over the Docker network.
+    image: redis:7-alpine
+    container_name: vedaai-redis
+    restart: unless-stopped
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
-  mongo_data:
+  mongodb_data:
