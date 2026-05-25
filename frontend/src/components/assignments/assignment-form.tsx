@@ -509,23 +509,23 @@ export function AssignmentForm() {
 
           <div className="space-y-4">
             {rows.map((row) => (
-              <div key={row.id} className="bg-white rounded-[32px] p-5 md:p-6 shadow-sm border border-zinc-50 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div key={row.id} className="bg-white rounded-2xl md:rounded-[32px] p-3.5 md:p-6 shadow-sm border border-zinc-50 space-y-3.5 md:space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* Type Selector Header */}
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-2 md:gap-4">
                   <div className="flex-1 relative">
                     <div
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleDropdown(row.id);
                       }}
-                      className="flex items-center justify-between px-4 py-2 hover:bg-zinc-50 rounded-xl cursor-pointer transition-all font-[family-name:var(--font-inter)]"
+                      className="flex items-center justify-between px-2 py-1.5 md:px-4 md:py-2 hover:bg-zinc-50 rounded-xl cursor-pointer transition-all font-[family-name:var(--font-inter)]"
                     >
-                      <span className="text-[13px] font-bold text-zinc-800">{row.label}</span>
-                      <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-200 ${row.isDropdownOpen ? 'rotate-180' : ''}`} />
+                      <span className="text-xs md:text-[13px] font-bold text-zinc-800 truncate">{row.label}</span>
+                      <ChevronDown size={14} className={`text-zinc-400 transition-transform duration-200 ${row.isDropdownOpen ? 'rotate-180' : ''}`} />
                     </div>
 
                     {row.isDropdownOpen && (
-                      <div className="absolute left-0 right-0 top-[40px] z-50 bg-white border border-zinc-100 rounded-[24px] shadow-2xl p-2 flex flex-col gap-1 font-[family-name:var(--font-inter)] text-sm animate-in fade-in zoom-in-95 duration-150">
+                      <div className="absolute left-0 right-0 top-[36px] md:top-[40px] z-50 bg-white border border-zinc-100 rounded-2xl md:rounded-[24px] shadow-2xl p-2 flex flex-col gap-1 font-[family-name:var(--font-inter)] text-xs md:text-sm animate-in fade-in zoom-in-95 duration-150">
                         {QUESTION_TYPES.map((option) => (
                           <button
                             key={option.type}
@@ -546,54 +546,54 @@ export function AssignmentForm() {
                   <button
                     type="button"
                     onClick={() => removeRow(row.id)}
-                    className="text-zinc-400 hover:text-red-400 transition-colors p-1"
+                    className="text-zinc-400 hover:text-red-400 transition-colors p-1 shrink-0"
                   >
                     <X size={18} />
                   </button>
                 </div>
 
                 {/* Steppers Area */}
-                <div className="flex gap-3">
+                <div className="flex gap-2.5 md:gap-3">
                   {/* Question Count Stepper */}
-                  <div className="flex-1 bg-[#F5F5F5] rounded-2xl p-3 flex flex-col items-center gap-2">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">No. of Questions</span>
-                    <div className="flex items-center justify-between w-full px-2">
+                  <div className="flex-1 bg-[#F5F5F5] rounded-xl md:rounded-2xl p-2 md:p-3 flex flex-col items-center gap-1.5 md:gap-2">
+                    <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-tight select-none text-center">No. of Questions</span>
+                    <div className="flex items-center justify-between w-full px-0.5 md:px-2">
                       <button
                         type="button"
                         onClick={() => updateRow(row.id, 'count', -1)}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors"
+                        className="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors shrink-0"
                       >
-                        <Minus size={14} />
+                        <Minus size={12} />
                       </button>
-                      <span className="text-sm font-bold text-zinc-900 font-[family-name:var(--font-inter)]">{row.count}</span>
+                      <span className="text-xs md:text-sm font-bold text-zinc-900 font-[family-name:var(--font-inter)]">{row.count}</span>
                       <button
                         type="button"
                         onClick={() => updateRow(row.id, 'count', 1)}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors"
+                        className="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors shrink-0"
                       >
-                        <Plus size={14} />
+                        <Plus size={12} />
                       </button>
                     </div>
                   </div>
 
                   {/* Marks Stepper */}
-                  <div className="flex-1 bg-[#F5F5F5] rounded-2xl p-3 flex flex-col items-center gap-2">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">Marks</span>
-                    <div className="flex items-center justify-between w-full px-2">
+                  <div className="flex-1 bg-[#F5F5F5] rounded-xl md:rounded-2xl p-2 md:p-3 flex flex-col items-center gap-1.5 md:gap-2">
+                    <span className="text-[8px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-tight select-none text-center">Marks</span>
+                    <div className="flex items-center justify-between w-full px-0.5 md:px-2">
                       <button
                         type="button"
                         onClick={() => updateRow(row.id, 'marks', -1)}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors"
+                        className="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors shrink-0"
                       >
-                        <Minus size={14} />
+                        <Minus size={12} />
                       </button>
-                      <span className="text-sm font-bold text-zinc-900 font-[family-name:var(--font-inter)]">{row.marks}</span>
+                      <span className="text-xs md:text-sm font-bold text-zinc-900 font-[family-name:var(--font-inter)]">{row.marks}</span>
                       <button
                         type="button"
                         onClick={() => updateRow(row.id, 'marks', 1)}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors"
+                        className="w-6 h-6 md:w-8 md:h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors shrink-0"
                       >
-                        <Plus size={14} />
+                        <Plus size={12} />
                       </button>
                     </div>
                   </div>
