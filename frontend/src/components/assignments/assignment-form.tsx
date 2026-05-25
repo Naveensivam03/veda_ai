@@ -211,19 +211,20 @@ export function AssignmentForm() {
   };
 
   const handleDateClick = () => {
-    if (dateInputRef.current) {
+    const input = dateInputRef.current;
+    if (input) {
       try {
         // Use showPicker() if available (modern browsers)
-        if ('showPicker' in dateInputRef.current) {
-          (dateInputRef.current as any).showPicker();
+        if (typeof (input as any).showPicker === 'function') {
+          (input as any).showPicker();
         } else {
           // Fallback: trigger click on the element
-          dateInputRef.current.click();
+          input.click();
         }
       } catch (err) {
         console.error('Failed to show date picker:', err);
         // Fallback: trigger click on the element
-        dateInputRef.current.click();
+        input.click();
       }
     }
   };
