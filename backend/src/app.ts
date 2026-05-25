@@ -29,5 +29,9 @@ export function createApp() {
   app.use("/api/papers", paperRouter);
   app.use("/api/admin", adminRouter);
 
+  app.get("/health", (_, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   return app;
 }
