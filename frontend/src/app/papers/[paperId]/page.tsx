@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { TopNav } from '@/components/layout/top-nav';
 import { PaperPreview } from '@/components/paper/paper-preview';
-import { Download, Printer } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { Paper } from '@/types/paper';
 import { getPaperByAssignmentId } from '@/services/paper.service';
 import { useTeacher } from '@/hooks/use-teacher';
@@ -126,19 +126,12 @@ export default function PaperPage({ params }: { params: Promise<{ paperId: strin
           <div className="flex items-center gap-3 relative z-10">
             <button 
               onClick={handlePrint}
-              className="flex items-center gap-2.5 px-6 py-3 bg-white hover:bg-zinc-100 text-[#171717] rounded-full text-sm font-bold shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer font-[family-name:var(--font-bricolage)]"
+              className="flex items-center justify-center gap-2.5 p-3 md:px-6 md:py-3 bg-white hover:bg-zinc-100 text-[#171717] rounded-full text-sm font-bold shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer font-[family-name:var(--font-bricolage)]"
               disabled={isLoading}
+              title="Download as PDF"
             >
               <Download size={18} />
-              <span>Download as PDF</span>
-            </button>
-            <button 
-              onClick={handlePrint}
-              className="p-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-full shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
-              title="Print Examination Sheet"
-              disabled={isLoading}
-            >
-              <Printer size={18} />
+              <span className="hidden md:inline">Download as PDF</span>
             </button>
           </div>
         </div>
