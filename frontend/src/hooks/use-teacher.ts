@@ -32,8 +32,16 @@ export function useTeacher() {
 
     void loadTeacher();
 
+    // Listen for custom event to trigger re-fetch of teacher context/credits
+    const handleCreditsUpdate = () => {
+      void loadTeacher();
+    };
+
+    window.addEventListener('credits-updated', handleCreditsUpdate);
+
     return () => {
       active = false;
+      window.removeEventListener('credits-updated', handleCreditsUpdate);
     };
   }, []);
 

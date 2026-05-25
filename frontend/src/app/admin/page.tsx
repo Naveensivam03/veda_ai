@@ -133,6 +133,9 @@ export default function AdminPage() {
       // Update teachers list local state
       setTeachers(prev => prev.map(t => t._id === teacherId ? { ...t, generationCredits: result.generationCredits } : t));
       
+      // Dispatch event to instantly update the sidebar credits/limit
+      window.dispatchEvent(new Event('credits-updated'));
+
       setSuccessMessage(`Successfully updated limit for ${result.fullName} to ${result.generationCredits} credits!`);
       
       // Clear success message after 4s

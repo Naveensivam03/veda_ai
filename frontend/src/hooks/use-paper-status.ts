@@ -44,6 +44,9 @@ export function usePaperStatus(assignmentId: string | null): UsePaperStatusResul
 
         if (response.status === 'completed' || response.status === 'failed') {
           clearPollingInterval();
+          if (response.status === 'completed') {
+            window.dispatchEvent(new Event('credits-updated'));
+          }
         }
       } catch (pollError) {
         if (!isActive) {
