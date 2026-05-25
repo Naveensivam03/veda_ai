@@ -9,6 +9,14 @@ import { logger } from "./utils/logger";
 async function startServer(): Promise<void> {
   await connectDB();
 
+  // Run the background worker inside the same process in production (e.g., Render Free Tier)
+  if (process.env.NODE_ENV === "production" || process.env.START_WORKER === "true") {
+    logger.info("Production environment detected. Starting background worker inline...");
+    import("./workers/paper.worker").catch((error) => {
+      logger.error("Failed to start background worker inline", error);
+    });
+  }
+
   const app = createApp();
 
   app.listen(env.PORT, () => {
