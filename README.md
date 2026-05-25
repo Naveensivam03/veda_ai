@@ -181,15 +181,34 @@ The final generated examination sheet, completed with detailed section groupings
 | `sections` | `Array` | Nested questions, options, marks, and unique keys |
 | `answerKey` | `Object` | Decoupled model answers and marking rubrics for teachers |
 
----
+## AI Generation Limits & Credit System
 
-## The AI Generation Limit Rule
+To simulate a robust, enterprise-grade subscription tier, VedaAI enforces dual limits on content creation: **client-side input limits** and **backend-enforced credit balances**.
 
-To simulate enterprise grade production tiers:
-1. **Verification**: When requesting an assignment (`POST /api/assignments`), the backend queries the database for the teacher's profile. If `generationCredits <= 0`, it instantly returns a `403 Forbidden` JSON response.
-2. **Execution**: The background queue worker runs the Gemini API generator. If the AI model fails or if Redis encounters an error, **no credit is deducted**.
-3. **Consumption**: Once the Gemini generator responds and the `GeneratedPaper` successfully commits to MongoDB, the worker triggers an atomic MongoDB decrement (`$inc: { generationCredits: -1 }`).
-4. **Soft Alert Banners**: When a teacher hits the limit, the Next.js creation form automatically warns them with a beautiful dynamic card and disables the submission buttons without using intrusive browser popups.
+### 1. Document Extraction Limits (Client-Side)
+To ensure optimal LLM token usage and prevent payload overflow:
+* **Max Text Length**: Extracted PDF or plain text content is capped at **25,000 characters**.
+* **Direct Grounding**: This extracted text serves as the direct grounding source for Gemini, ensuring generated question papers are strictly context-bound.
+
+### 2. The AI Generation Credit Rule (Backend-Enforced)
+* **Verification Guard**: When an educator submits a creation request (`POST /api/assignments`), the API server instantly queries MongoDB. If the user's `generationCredits <= 0`, it rejects the request with an `HTTP 403 Forbidden` response.
+* **Failure Protection (No Deduction)**: The BullMQ background queue worker handles the execution. If the Gemini API fails, or if Redis/MongoDB experiences database connectivity issues, **no credit is deducted**.
+* **Atomic Consumption**: Only when the Gemini generator successfully returns the structured JSON and the `GeneratedPaper` is fully committed to MongoDB does the worker trigger an atomic decrement (`$inc: { generationCredits: -1 }`).
+* **Soft Alert UI**: When a teacher's credit balance is depleted, the Next.js frontend automatically presents a sleek, non-intrusive warning alert card and disables the submission buttons gracefully.
+
+### 3. Admin Credit Refill & Allocation Options
+Administrators can manage educator accounts and restore credit levels directly via the **Admin Console** at `/admin`. The console supports the following credit tier options:
+
+| Credit Tier | Type | Purpose / Description |
+| :--- | :--- | :--- |
+| **3 Credits** | `Default` | The standard seeded balance for simulated teacher accounts (e.g., Dr. Sarah Jenkins). |
+| **5 Credits** | `Custom Tier` | Bronze allocation for moderate assessment testing. |
+| **10 Credits** | `Custom Tier` | Silver allocation for active educators. |
+| **20 Credits** | `Custom Tier` | Gold allocation for high-volume exam generation. |
+| **50 Credits** | `Custom Tier` | Platinum allocation for power users or department heads. |
+
+> [!NOTE]
+> All credit limit refills and updates are fully transactional and trigger real-time state synchronization. When an admin updates a teacher's limit, a custom window event (`credits-updated`) is dispatched to instantly sync the teacher's sidebar layout credit gauge without requiring page refreshes.
 
 ---
 
