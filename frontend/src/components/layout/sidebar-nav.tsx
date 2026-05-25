@@ -13,19 +13,19 @@ export function SidebarNav() {
     { 
       label: 'My Groups', 
       href: '/groups',
-      icon: <Image src="/navbar/mygroup.png" alt="" width={22} height={22} />, 
+      icon: <Image src="/navbar/mygroup.png" alt="" width={22} height={22} style={{ width: 'auto', height: 'auto' }} />, 
       active: pathname.startsWith('/groups')
     },
     { 
       label: 'AI Teacher\'s Toolkit', 
       href: '/toolkit',
-      icon: <Image src="/navbar/ai-toolkit.png" alt="" width={22} height={22} />, 
+      icon: <Image src="/navbar/ai-toolkit.png" alt="" width={22} height={22} style={{ width: 'auto', height: 'auto' }} />, 
       active: pathname.startsWith('/toolkit')
     },
     { 
       label: 'My Library', 
       href: '/library',
-      icon: <Image src="/navbar/library.png" alt="" width={22} height={22} />, 
+      icon: <Image src="/navbar/library.png" alt="" width={22} height={22} style={{ width: 'auto', height: 'auto' }} />, 
       active: pathname.startsWith('/library'),
       badge: 32
     },

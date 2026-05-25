@@ -6,30 +6,26 @@ interface AnswerKeyProps {
 }
 
 export function AnswerKey({ sections }: AnswerKeyProps) {
+  const allQuestions = sections.flatMap((section) => section.questions);
+
   return (
-    <div className="space-y-5 pt-8 mt-12 border-t border-dashed border-zinc-300 print:hidden">
-      {/* Separator / Title */}
-      <div className="text-center select-none pb-2">
-        <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-400 block mb-1">
-          Teacher Evaluation Resource
-        </span>
-        <h3 className="text-sm font-bold text-zinc-700 tracking-widest uppercase font-[family-name:var(--font-bricolage)]">
-          ANSWER KEY & SOLUTION CRITERIA
-        </h3>
+    <div className="space-y-6 pt-12 mt-12 border-t border-zinc-200">
+      <div className="text-center font-bold text-[#171717] py-4 uppercase tracking-wider text-sm select-none">
+        End of Question Paper
       </div>
 
-      {/* Answer solutions list */}
-      <div className="space-y-3.5 font-[family-name:var(--font-inter)] text-xs md:text-sm text-zinc-500 leading-relaxed pl-1 md:pl-2">
-        {sections.flatMap((section) =>
-          section.questions.map((question) => (
-            <div key={question.id} className="flex items-start gap-3">
-              <span className="font-bold text-[#171717] w-10 shrink-0 text-right select-none">
-                Ans {question.number}.
-              </span>
-              <p className="flex-1 text-justify font-medium">{question.answerKey}</p>
+      <div className="space-y-4 font-[family-name:var(--font-inter)]">
+        <h3 className="text-base md:text-lg font-bold text-[#171717] select-none">
+          Answer Key:
+        </h3>
+        <div className="space-y-3 text-sm md:text-base text-[#2E2E2E] leading-relaxed">
+          {allQuestions.map((question, idx) => (
+            <div key={question.id} className="flex items-start gap-2">
+              <span className="shrink-0">{idx + 1}.</span>
+              <p className="flex-1">{question.answerKey}</p>
             </div>
-          ))
-        )}
+          ))}
+        </div>
       </div>
     </div>
   );

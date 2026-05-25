@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { getAssignmentStatus } from '@/services/assignment.service';
-import type { AssignmentGenerationStatus } from '@/types/assignment';
+import type { AssignmentStatus } from '@/types/assignment';
 
 interface UsePaperStatusResult {
-  status: AssignmentGenerationStatus | null;
+  status: AssignmentStatus | null;
   isPolling: boolean;
   error: string | null;
 }
@@ -13,7 +13,7 @@ interface UsePaperStatusResult {
 const POLLING_INTERVAL_MS = 2500;
 
 export function usePaperStatus(assignmentId: string | null): UsePaperStatusResult {
-  const [status, setStatus] = useState<AssignmentGenerationStatus | null>(null);
+  const [status, setStatus] = useState<AssignmentStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 

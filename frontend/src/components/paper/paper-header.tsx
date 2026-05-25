@@ -7,17 +7,13 @@ interface PaperHeaderProps {
 
 export function PaperHeader({ paper }: PaperHeaderProps) {
   return (
-    <div className="text-center space-y-2 select-none pb-4 border-b border-zinc-200">
-      <h2 className="text-base md:text-lg font-bold text-[#171717] font-[family-name:var(--font-bricolage)] leading-snug tracking-tight uppercase">
+    <div className="text-center space-y-1.5 select-none pb-8">
+      <h2 className="text-xl md:text-2xl font-bold text-[#171717] font-[family-name:var(--font-bricolage)] leading-tight tracking-tight">
         {paper.schoolName}
       </h2>
-      <p className="text-sm font-semibold text-[#171717] font-[family-name:var(--font-inter)]">
-        {paper.paperTitle}
-      </p>
-      <div className="flex items-center justify-center gap-4 text-xs font-semibold text-zinc-400 font-[family-name:var(--font-inter)] uppercase tracking-wider">
-        <span>Class: {paper.grade}</span>
-        <span className="w-1 h-1 rounded-full bg-zinc-300" />
-        <span>Subject: {paper.subject}</span>
+      <div className="flex flex-col gap-1 text-sm md:text-base font-semibold text-[#272727] font-[family-name:var(--font-inter)]">
+        <p>Subject: {paper.subject}</p>
+        <p>Class: {paper.grade}</p>
       </div>
     </div>
   );

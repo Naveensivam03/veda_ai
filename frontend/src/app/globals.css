@@ -42,3 +42,60 @@ input[type="date"] {
   appearance: none !important;
   -moz-appearance: textfield !important;
 }
+
+/* Print Specific Optimizations */
+@media print {
+  @page {
+    margin: 15mm;
+    size: A4;
+  }
+
+  /* Reset layout for print */
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  /* Hide UI specific elements inside the main content */
+  nav, 
+  header, 
+  footer, 
+  aside,
+  .print\:hidden,
+  button,
+  [role="button"],
+  .action-banner {
+    display: none !important;
+  }
+
+  /* Ensure the paper container fills the width and has no shadows/borders */
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+
+  .print\:m-0 {
+    margin: 0 !important;
+  }
+
+  .print\:border-none {
+    border: none !important;
+  }
+
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  /* Force page breaks for professional look */
+  .page-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+
+  /* Enable high quality graphics */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+}

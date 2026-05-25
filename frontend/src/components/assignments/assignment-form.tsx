@@ -81,6 +81,7 @@ export function AssignmentForm() {
 
   // Due Date state
   const [dueDate, setDueDate] = useState('2026-06-15');
+  const dateInputRef = useRef<HTMLInputElement>(null);
 
   // Format date helper from YYYY-MM-DD to DD-MM-YYYY
   const formatDisplayDate = (dateStr: string) => {
@@ -96,6 +97,21 @@ export function AssignmentForm() {
   const [instructions, setInstructions] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+
+  // Load PDF.js dynamically on client mount for binary PDF text parsing
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !(window as any).pdfjsLib) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      script.onload = () => {
+        const pdfjs = (window as any)['pdfjs-dist/build/pdf'];
+        if (pdfjs) {
+          pdfjs.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+      };
+      document.head.appendChild(script);
+    }
+  }, []);
 
   // Totals calculations
   const totalQuestions = rows.reduce((sum, row) => sum + row.count, 0);
@@ -114,13 +130,42 @@ export function AssignmentForm() {
         const text = await selectedFile.text();
         setFileContent(text);
       } else if (fileType === 'pdf') {
-        // Extract plain text blocks from the binary stream for Gemini
-        const rawText = await selectedFile.text();
-        const cleanText = rawText
-          .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .substring(0, 15000); // Pull up to 15,000 characters
-        setFileContent(cleanText);
+        const pdfjs = (window as any)['pdfjs-dist/build/pdf'];
+        if (pdfjs) {
+          try {
+            const arrayBuffer = await selectedFile.arrayBuffer();
+            const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+            const pdf = await loadingTask.promise;
+            let fullText = '';
+            
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              const pageText = textContent.items
+                .map((item: any) => item.str)
+                .join(' ');
+              fullText += pageText + '\n';
+            }
+            
+            setFileContent(fullText.substring(0, 25000));
+            console.log('Successfully extracted PDF plain text using PDF.js!');
+          } catch (pdfErr) {
+            console.error('PDF.js parsing failed, using raw fallback:', pdfErr);
+            const rawText = await selectedFile.text();
+            const cleanText = rawText
+              .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
+              .replace(/\s+/g, ' ')
+              .substring(0, 15000);
+            setFileContent(cleanText);
+          }
+        } else {
+          const rawText = await selectedFile.text();
+          const cleanText = rawText
+            .replace(/[^\x20-\x7E\n\r\t]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .substring(0, 15000);
+          setFileContent(cleanText);
+        }
       }
     } catch (err) {
       console.error('Failed to extract file text:', err);
@@ -163,6 +208,24 @@ export function AssignmentForm() {
 
   const triggerFileSelect = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleDateClick = () => {
+    if (dateInputRef.current) {
+      try {
+        // Use showPicker() if available (modern browsers)
+        if ('showPicker' in dateInputRef.current) {
+          (dateInputRef.current as any).showPicker();
+        } else {
+          // Fallback: trigger click on the element
+          dateInputRef.current.click();
+        }
+      } catch (err) {
+        console.error('Failed to show date picker:', err);
+        // Fallback: trigger click on the element
+        dateInputRef.current.click();
+      }
+    }
   };
 
   const removeFile = () => {
@@ -312,59 +375,60 @@ export function AssignmentForm() {
     <div className="w-full space-y-12">
       {/* Configuration Card */}
       <div
-        className="bg-white border border-white shadow-[0_8px_30px_rgba(0,0,0,0.06)] rounded-[32px] p-8 md:p-12 transition-all duration-300"
+        className="bg-[#EFEFEF] md:bg-white border border-white shadow-[0_8px_30px_rgba(0,0,0,0.06)] rounded-[32px] p-6 md:p-12 transition-all duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-10">
-          <h2 className="text-xl font-bold text-[#272727] font-[family-name:var(--font-bricolage)] tracking-tight">Assignment Structure</h2>
-          <p className="text-zinc-400 text-xs font-semibold font-[family-name:var(--font-inter)] mt-1.5 uppercase tracking-wider">
-            Configuring assignment details for {teacherData?.fullName || 'Loading...'} ({teacherData?.subject || 'Mathematics'})
+        <div className="mb-8 md:mb-10">
+          <h2 className="text-xl font-bold text-[#272727] font-[family-name:var(--font-bricolage)] tracking-tight">Assignment Details</h2>
+          <p className="text-zinc-500 text-xs font-medium font-[family-name:var(--font-inter)] mt-1 tracking-tight">
+            Basic information about your assignment
           </p>
         </div>
 
         {/* SECTION 1 - Upload Zone */}
-        <div className="space-y-4 mb-12">
-          <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest font-[family-name:var(--font-inter)] block">
-            Upload Source Materials
-          </label>
-
+        <div className="space-y-4 mb-8 md:mb-12">
           <input
             type="file"
             ref={fileInputRef}
             onChange={onFileSelect}
-            accept="application/pdf,text/plain"
+            accept="application/pdf,text/plain,image/jpeg,image/png"
             className="hidden"
           />
 
           {!file ? (
-            <div
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDrop={onDrop}
-              onClick={triggerFileSelect}
-              className={`w-full border-2 border-dashed rounded-[24px] p-10 flex flex-col items-center justify-center bg-white/30 cursor-pointer transition-all duration-300 ${isDragActive
-                  ? 'border-[#171717] bg-white/60 scale-[0.99] shadow-sm'
-                  : 'border-zinc-200/80 hover:border-zinc-300 hover:bg-white/45'
-                }`}
-            >
-              <div className="bg-white/80 backdrop-blur-md rounded-full p-4 shadow-sm mb-4 border border-white/40">
-                <UploadCloud size={28} className="text-zinc-500" />
-              </div>
-              <h4 className="text-base font-bold text-[#272727] font-[family-name:var(--font-bricolage)]">
-                Choose a file or drag & drop it here
-              </h4>
-              <p className="text-zinc-400 text-xs mt-1.5 mb-6 font-[family-name:var(--font-inter)]">
-                PDF or TXT up to 10MB
-              </p>
-              <button
-                type="button"
-                className="px-6 py-2.5 bg-white border border-zinc-100 rounded-full text-xs font-bold text-[#272727] hover:bg-zinc-50 hover:border-zinc-200 shadow-sm transition-all duration-200 font-[family-name:var(--font-bricolage)]"
+            <div className="space-y-4">
+              <div
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+                onClick={triggerFileSelect}
+                className={`w-full border-2 border-dashed rounded-[32px] p-8 md:p-10 flex flex-col items-center justify-center bg-white cursor-pointer transition-all duration-300 ${isDragActive
+                    ? 'border-[#171717] bg-white/60 scale-[0.99] shadow-sm'
+                    : 'border-zinc-200 hover:border-zinc-300'
+                  }`}
               >
-                Browse Files
-              </button>
+                <div className="bg-white rounded-full p-4 mb-4">
+                  <UploadCloud size={32} className="text-zinc-900" />
+                </div>
+                <h4 className="text-sm font-bold text-[#272727] font-[family-name:var(--font-bricolage)] text-center">
+                  Choose a file or drag & drop it here
+                </h4>
+                <p className="text-zinc-400 text-[10px] mt-1 font-medium font-[family-name:var(--font-inter)]">
+                  JPEG, PNG, upto 10MB
+                </p>
+                <button
+                  type="button"
+                  className="mt-6 px-8 py-2.5 bg-white border border-zinc-100 rounded-full text-xs font-bold text-[#272727] hover:bg-zinc-50 hover:border-zinc-200 shadow-sm transition-all duration-200 font-[family-name:var(--font-bricolage)]"
+                >
+                  Browse Files
+                </button>
+              </div>
+              <p className="text-center text-[11px] font-medium text-zinc-500 font-[family-name:var(--font-inter)] px-4">
+                Upload images of your preferred document/image
+              </p>
             </div>
           ) : (
-            <div className="w-full bg-white/70 backdrop-blur-md border border-white/60 rounded-3xl p-6 shadow-sm flex items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="w-full bg-white border border-white rounded-[32px] p-6 shadow-sm flex items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <div className="bg-zinc-900 text-white rounded-2xl p-3.5 shadow-md flex items-center justify-center">
                   <FileText size={24} />
@@ -411,118 +475,127 @@ export function AssignmentForm() {
         </div>
 
         {/* SECTION 2 - Due Date */}
-        <div className="space-y-1.5 mb-12">
-          <label className="text-[12px] font-semibold text-zinc-400 font-[family-name:var(--font-inter)] block select-none">
+        <div className="space-y-2 mb-8 md:mb-12">
+          <label className="text-[13px] font-bold text-[#272727] font-[family-name:var(--font-inter)] block select-none">
             Due Date
           </label>
-          <div className="relative w-full h-9 px-4 pr-10 bg-zinc-50/40 border border-zinc-100 rounded-xl flex items-center justify-between">
-            {/* Visual styled text and custom icon layer (rendered underneath) */}
-            <span className="text-xs font-normal font-[family-name:var(--font-inter)] text-zinc-600 select-none">
+          <div 
+            onClick={handleDateClick}
+            className="relative w-full h-12 px-6 bg-white border border-zinc-100 rounded-2xl flex items-center justify-between cursor-pointer group shadow-sm"
+          >
+            <span className="text-sm font-medium font-[family-name:var(--font-inter)] text-zinc-400 select-none">
               {dueDate ? formatDisplayDate(dueDate) : 'DD-MM-YYYY'}
             </span>
-            <Calendar size={14} className="text-zinc-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="p-1.5 bg-zinc-50 rounded-lg">
+              <Calendar size={18} className="text-zinc-900" />
+            </div>
 
-            {/* Native date input stretched over the container, completely transparent (opacity 0) */}
             <input
+              ref={dateInputRef}
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 pointer-events-none"
             />
           </div>
         </div>
 
         {/* SECTION 3 - Question Configuration */}
-        <div className="space-y-6 mb-12">
-          <div className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-widest font-[family-name:var(--font-inter)]">
-            <span>Question Structure</span>
-            <div className="flex gap-16 text-right font-bold pr-16 md:pr-20">
-              <span className="w-20">No. of Questions</span>
-              <span className="w-16">Marks each</span>
-            </div>
-          </div>
+        <div className="space-y-4 mb-10">
+          <label className="text-[13px] font-bold text-[#272727] font-[family-name:var(--font-inter)] block select-none">
+            Question Type
+          </label>
 
           <div className="space-y-4">
             {rows.map((row) => (
-              <div key={row.id} className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                {/* Custom Styled Dropdown */}
-                <div className="flex-1 relative">
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleDropdown(row.id);
-                    }}
-                    className="flex items-center justify-between px-6 py-3.5 bg-white border border-zinc-100 rounded-full cursor-pointer hover:border-zinc-200 transition-all font-[family-name:var(--font-inter)] shadow-sm"
-                  >
-                    <span className="text-sm font-medium text-zinc-700">{row.label}</span>
-                    <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-200 ${row.isDropdownOpen ? 'rotate-180' : ''}`} />
+              <div key={row.id} className="bg-white rounded-[32px] p-5 md:p-6 shadow-sm border border-zinc-50 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* Type Selector Header */}
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 relative">
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleDropdown(row.id);
+                      }}
+                      className="flex items-center justify-between px-4 py-2 hover:bg-zinc-50 rounded-xl cursor-pointer transition-all font-[family-name:var(--font-inter)]"
+                    >
+                      <span className="text-[13px] font-bold text-zinc-800">{row.label}</span>
+                      <ChevronDown size={16} className={`text-zinc-400 transition-transform duration-200 ${row.isDropdownOpen ? 'rotate-180' : ''}`} />
+                    </div>
+
+                    {row.isDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-[40px] z-50 bg-white border border-zinc-100 rounded-[24px] shadow-2xl p-2 flex flex-col gap-1 font-[family-name:var(--font-inter)] text-sm animate-in fade-in zoom-in-95 duration-150">
+                        {QUESTION_TYPES.map((option) => (
+                          <button
+                            key={option.type}
+                            type="button"
+                            onClick={() => selectType(row.id, option.label)}
+                            className={`w-full text-left px-4 py-2.5 rounded-full transition-colors font-medium ${row.type === option.type
+                                ? 'bg-zinc-50 text-zinc-950 font-bold'
+                                : 'text-zinc-500 hover:bg-zinc-50/50'
+                              }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
-                  {row.isDropdownOpen && (
-                    <div className="absolute left-0 right-0 top-[54px] z-50 bg-white border border-zinc-100 rounded-[24px] shadow-2xl p-2 flex flex-col gap-1 font-[family-name:var(--font-inter)] text-sm animate-in fade-in zoom-in-95 duration-150">
-                      {QUESTION_TYPES.map((option) => (
-                        <button
-                          key={option.type}
-                          type="button"
-                          onClick={() => selectType(row.id, option.label)}
-                          className={`w-full text-left px-4 py-2.5 rounded-full transition-colors font-medium ${row.type === option.type
-                              ? 'bg-zinc-50 text-zinc-950 font-bold'
-                              : 'text-zinc-500 hover:bg-zinc-50/50 hover:text-zinc-950'
-                            }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
+                  <button
+                    type="button"
+                    onClick={() => removeRow(row.id)}
+                    className="text-zinc-400 hover:text-red-400 transition-colors p-1"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Steppers Area */}
+                <div className="flex gap-3">
+                  {/* Question Count Stepper */}
+                  <div className="flex-1 bg-[#F5F5F5] rounded-2xl p-3 flex flex-col items-center gap-2">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">No. of Questions</span>
+                    <div className="flex items-center justify-between w-full px-2">
+                      <button
+                        type="button"
+                        onClick={() => updateRow(row.id, 'count', -1)}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors"
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <span className="text-sm font-bold text-zinc-900 font-[family-name:var(--font-inter)]">{row.count}</span>
+                      <button
+                        type="button"
+                        onClick={() => updateRow(row.id, 'count', 1)}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors"
+                      >
+                        <Plus size={14} />
+                      </button>
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                {/* Delete Button */}
-                <button
-                  type="button"
-                  onClick={() => removeRow(row.id)}
-                  className="text-zinc-300 hover:text-red-400 transition-colors p-2 rounded-full hover:bg-zinc-50"
-                  title="Remove this type"
-                >
-                  <X size={18} />
-                </button>
-
-                {/* Question Count Stepper */}
-                <div className="flex items-center justify-between px-3 py-2 bg-zinc-50 border border-zinc-100/50 rounded-full w-32 shrink-0 shadow-inner">
-                  <button
-                    type="button"
-                    onClick={() => updateRow(row.id, 'count', -1)}
-                    className="w-8 h-8 rounded-full bg-white border border-zinc-100 shadow-sm flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors shrink-0"
-                  >
-                    <Minus size={13} />
-                  </button>
-                  <span className="text-sm font-bold text-zinc-900 font-[family-name:var(--font-inter)] w-8 text-center">{row.count}</span>
-                  <button
-                    type="button"
-                    onClick={() => updateRow(row.id, 'count', 1)}
-                    className="w-8 h-8 rounded-full bg-white border border-zinc-100 shadow-sm flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors shrink-0"
-                  >
-                    <Plus size={13} />
-                  </button>
-                </div>
-
-                {/* Marks Stepper */}
-                <div className="flex items-center justify-between px-3 py-2 bg-zinc-50 border border-zinc-100/50 rounded-full w-32 shrink-0 shadow-inner">
-                  <button
-                    type="button"
-                    onClick={() => updateRow(row.id, 'marks', -1)}
-                    className="w-8 h-8 rounded-full bg-white border border-zinc-100 shadow-sm flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors shrink-0"
-                  >
-                    <Minus size={13} />
-                  </button>
-                  <span className="text-sm font-bold text-zinc-900 font-[family-name:var(--font-inter)] w-8 text-center">{row.marks}</span>
-                  <button
-                    type="button"
-                    onClick={() => updateRow(row.id, 'marks', 1)}
-                    className="w-8 h-8 rounded-full bg-white border border-zinc-100 shadow-sm flex items-center justify-center text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors shrink-0"
-                  >
-                    <Plus size={13} />
-                  </button>
+                  {/* Marks Stepper */}
+                  <div className="flex-1 bg-[#F5F5F5] rounded-2xl p-3 flex flex-col items-center gap-2">
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">Marks</span>
+                    <div className="flex items-center justify-between w-full px-2">
+                      <button
+                        type="button"
+                        onClick={() => updateRow(row.id, 'marks', -1)}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors"
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <span className="text-sm font-bold text-zinc-900 font-[family-name:var(--font-inter)]">{row.marks}</span>
+                      <button
+                        type="button"
+                        onClick={() => updateRow(row.id, 'marks', 1)}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -531,85 +604,57 @@ export function AssignmentForm() {
           <button
             type="button"
             onClick={addRow}
-            className="mt-6 hover:opacity-80 transition-opacity cursor-pointer duration-200"
+            className="w-full flex items-center gap-2 text-sm font-bold text-[#171717] font-[family-name:var(--font-inter)] py-2 group"
           >
-            <QuestionConfigCard />
+            <div className="w-8 h-8 rounded-full bg-[#171717] flex items-center justify-center text-white group-active:scale-95 transition-transform">
+              <Plus size={18} />
+            </div>
+            <span>Add Question Type</span>
           </button>
         </div>
 
         {/* SECTION 4 - Summary */}
-        <div className="flex flex-col items-end gap-2 border-t border-zinc-100/70 pt-8 mb-12">
-          <div className="flex items-center gap-3 text-xs font-semibold text-zinc-400 font-[family-name:var(--font-inter)]">
-            <span>Total Questions :</span>
-            <span className="text-[#272727] font-bold text-sm bg-zinc-50 px-3 py-1 rounded-full border border-zinc-100 shadow-inner">
-              {totalQuestions}
-            </span>
+        <div className="flex flex-col items-end gap-1.5 mb-10 text-[13px] font-bold font-[family-name:var(--font-inter)] text-[#272727]">
+          <div className="flex items-center gap-1">
+            <span className="font-medium text-zinc-500">Total Questions :</span>
+            <span>{totalQuestions}</span>
           </div>
-          <div className="flex items-center gap-3 text-xs font-semibold text-zinc-400 font-[family-name:var(--font-inter)] mt-1">
-            <span>Total Marks :</span>
-            <span className="text-[#272727] font-bold text-sm bg-zinc-50 px-3 py-1 rounded-full border border-zinc-100 shadow-inner">
-              {totalMarks}
-            </span>
+          <div className="flex items-center gap-1">
+            <span className="font-medium text-zinc-500">Total Marks :</span>
+            <span>{totalMarks}</span>
           </div>
-          {teacherData && (
-            <div className="flex items-center gap-3 text-xs font-semibold text-zinc-400 font-[family-name:var(--font-inter)] mt-1">
-              <span>AI Generations Remaining :</span>
-              <span className={`font-bold text-sm px-3 py-1 rounded-full border shadow-inner ${
-                teacherData.generationCredits <= 0 
-                  ? 'bg-red-50 text-red-600 border-red-100 animate-pulse' 
-                  : 'bg-zinc-50 text-zinc-800 border-zinc-100'
-              }`}>
-                {teacherData.generationCredits} / 3
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* SECTION 5 - Additional Instructions */}
-        <div className="space-y-4">
+        {/* SECTION 5 - Additional Instructions (Desktop only or optional on mobile) */}
+        <div className="hidden md:block space-y-4">
           <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest font-[family-name:var(--font-inter)] block">
-            Additional Instructions (For better output)
+            Additional Instructions
           </label>
           <div className="relative bg-white/30 rounded-[24px] border border-zinc-200/50 shadow-inner group focus-within:border-zinc-300 transition-all duration-300">
             <textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
-              placeholder="e.g. Generate a question paper for a 3-hour exam duration with a mix of rigorous analytical and conceptual question types..."
+              placeholder="e.g. Generate a question paper for a 3-hour exam duration..."
               className="w-full px-6 py-6 bg-transparent text-sm font-medium font-[family-name:var(--font-inter)] text-zinc-800 placeholder:text-zinc-400/80 outline-none min-h-[140px] resize-none pr-16 leading-relaxed"
             />
             <VoiceInputButton />
           </div>
         </div>
-
-        {/* Soft limit exceeded premium banner warning block */}
-        {teacherData && teacherData.generationCredits <= 0 && (
-          <div className="mt-8 p-6 bg-red-50/60 border border-red-100 rounded-[24px] flex items-start gap-3.5 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="bg-red-500/10 p-2 rounded-xl text-red-500 shrink-0">
-              <AlertCircle size={20} />
-            </div>
-            <div className="space-y-1 text-left">
-              <h4 className="text-sm font-bold text-red-950 font-[family-name:var(--font-bricolage)]">AI Generation Limit Reached</h4>
-              <p className="text-xs text-red-600 leading-relaxed font-medium font-[family-name:var(--font-inter)]">
-                You’ve reached the current AI generation limit for this demo.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Navigation Controls */}
-      <div className="space-y-4 pt-2">
+      <div className="space-y-4 pt-4 px-2">
         {generationError ? (
-          <p className="text-sm text-red-500 font-[family-name:var(--font-inter)]">
+          <p className="text-sm text-red-500 font-[family-name:var(--font-inter)] text-center">
             {generationError}
           </p>
         ) : null}
 
-        <div className="flex items-center justify-between w-full font-[family-name:var(--font-bricolage)]">
-          <Link href="/assignments">
+        <div className="flex items-center justify-center gap-4 w-full font-[family-name:var(--font-bricolage)]">
+          <Link href="/assignments" className="flex-1 max-w-[180px]">
             <button
               type="button"
-              className="flex items-center gap-2.5 px-8 py-3.5 bg-white border border-zinc-200 rounded-full text-zinc-900 font-bold hover:bg-zinc-50 hover:border-zinc-300 transition-all shadow-sm cursor-pointer text-sm"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-white border border-zinc-200 rounded-full text-zinc-900 font-bold hover:bg-zinc-50 transition-all shadow-sm cursor-pointer text-sm"
             >
               <ArrowLeft size={18} />
               Previous
@@ -619,9 +664,9 @@ export function AssignmentForm() {
             type="button"
             onClick={handleGenerateAssignment}
             disabled={isGenerating || uploading || (teacherData !== null && teacherData.generationCredits <= 0)}
-            className="flex items-center gap-2.5 px-10 py-3.5 bg-[#171717] hover:bg-zinc-800 disabled:bg-zinc-300 disabled:cursor-not-allowed text-white rounded-full font-bold shadow-lg hover:shadow-xl transition-all cursor-pointer text-sm"
+            className="flex-1 max-w-[180px] flex items-center justify-center gap-2 px-6 py-3.5 bg-[#171717] hover:bg-zinc-800 disabled:bg-zinc-300 disabled:cursor-not-allowed text-white rounded-full font-bold shadow-lg transition-all cursor-pointer text-sm"
           >
-            {isGenerating ? 'Submitting...' : 'Generate Assignment'}
+            {isGenerating ? 'Submitting...' : 'Next'}
             <ArrowRight size={18} />
           </button>
         </div>

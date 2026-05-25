@@ -32,6 +32,7 @@ export interface UploadedMaterial {
 export interface CreateAssignmentRequestBody {
   teacherId: string;
   dueDate: string;
+  grade?: string;
   instructions?: string;
   uploadedMaterial?: UploadedMaterial | null;
   questionConfigs: QuestionConfig[];
@@ -42,6 +43,7 @@ export interface CreateAssignmentRequestBody {
 export interface CreateAssignmentData {
   teacherId: string;
   dueDate: Date;
+  grade: string;
   instructions: string;
   uploadedMaterial: UploadedMaterial | null;
   questionConfigs: QuestionConfig[];

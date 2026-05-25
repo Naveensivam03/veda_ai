@@ -1,5 +1,4 @@
-export type AssignmentStatus = 'Draft' | 'Published' | 'Closed';
-export type AssignmentGenerationStatus = 'draft' | 'generating' | 'completed' | 'failed';
+export type AssignmentStatus = 'draft' | 'generating' | 'completed' | 'failed';
 
 export type QuestionType = 'mcq' | 'short' | 'long' | 'true-false';
 export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'mixed';
@@ -36,16 +35,33 @@ export interface CreateAssignmentRequest {
 
 export interface CreateAssignmentResponse {
   assignmentId: string;
-  status: AssignmentGenerationStatus;
+  status: AssignmentStatus;
 }
 
 export interface AssignmentStatusResponse {
-  status: AssignmentGenerationStatus;
+  status: AssignmentStatus;
+}
+
+export interface AssignmentListItem {
+  id: string;
+  paperId: string | null;
+  title: string;
+  subject: string;
+  grade: string;
+  status: AssignmentStatus;
+  totalMarks: number;
+  totalQuestions: number;
+  createdAt: string;
+  dueDate: string;
+}
+
+export interface ListAssignmentsResponse {
+  assignments: AssignmentListItem[];
 }
 
 export interface AssignmentCardData {
   id: string;
-  paperId: string;
+  paperId: string | null;
   title: string;
   assignedDate: string;
   dueDate: string;

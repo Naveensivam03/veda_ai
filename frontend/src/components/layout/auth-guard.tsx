@@ -17,7 +17,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     const loggedIn = localStorage.getItem('vedaai_logged_in') === 'true';
     setIsLoggedIn(loggedIn);
 
-    if (!loggedIn && pathname !== '/login') {
+    if (!loggedIn && pathname !== '/login' && pathname !== '/admin') {
       router.push('/login');
     } else if (loggedIn && pathname === '/login') {
       router.push('/');
@@ -25,7 +25,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }, [pathname, router]);
 
   // Prevent layout flashes while resolving session state
-  if (isLoggedIn === null) {
+  if (isLoggedIn === null && pathname !== '/admin') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#171717] font-[family-name:var(--font-inter)] select-none">
         <div className="relative w-12 h-12 mb-4">
@@ -39,8 +39,8 @@ export function AuthGuard({ children }: AuthGuardProps) {
     );
   }
 
-  // Allow showing login page to unauthenticated users, or protected pages to authenticated users
-  if (!isLoggedIn && pathname !== '/login') {
+  // Allow showing login page or admin console to unauthenticated users, or protected pages to authenticated users
+  if (!isLoggedIn && pathname !== '/login' && pathname !== '/admin') {
     return null; // Will trigger redirect in useEffect
   }
 

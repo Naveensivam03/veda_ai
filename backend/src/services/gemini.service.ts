@@ -143,7 +143,8 @@ Guidelines:
 3. For true/false questions ('true-false'), provide options like ["True", "False"] or null, and specify "True" or "False" in the answerKey.
 4. For short ('short') and long ('long') questions, options must be null, and provide a clear model answer or rubric in the answerKey.
 5. All generated content must be academically accurate, highly professional, and suitable for the specified grade level.
-6. Return a valid JSON object matching the requested schema.`
+6. Return a valid JSON object matching the requested schema.
+7. CRITICAL: If a 'Source Document Content' is provided in the prompt, you MUST base the questions, reading passages, and assessments directly on that content (extracting facts, definitions, and themes from the text) to assess students' comprehension of that specific material.`
                   }
                 ]
               }

@@ -10,6 +10,7 @@ export interface UserDocument extends Document {
   schoolId: Types.ObjectId;
   avatarUrl: string;
   generationCredits: number;
+  isAdmin: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +32,10 @@ const userSchema = new Schema<UserDocument>(
       type: Number,
       default: 3,
       min: 0,
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

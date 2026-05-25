@@ -37,6 +37,8 @@ export const env = Object.freeze({
   REDIS_HOST: readRequiredString("REDIS_HOST"),
   REDIS_PORT: readRequiredNumber("REDIS_PORT"),
   GEMINI_API_KEY: readOptionalString("GEMINI_API_KEY"),
+  ADMIN_USERNAME: readOptionalString("ADMIN_USERNAME") || "admin",
+  ADMIN_PASSWORD: readOptionalString("ADMIN_PASSWORD") || "vedaai-admin-secret",
 });
 
 export type Env = typeof env;

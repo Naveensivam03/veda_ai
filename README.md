@@ -1,10 +1,10 @@
-# VedaAI — Premium AI Creator Workspace for Educators
+# VedaAI - Premium AI Creator Workspace for Educators
 
-VedaAI is a production-like, AI-driven examination and assignment generator tailored for schools. It enables educators to upload class notes or textbook material, extract key concepts, specify question structures, and generate complete, ready-to-print question sheets and answer keys using structured Google Gemini models.
+VedaAI is a production-grade, AI-driven examination and assignment generator tailored for schools. It enables educators to upload class notes or textbook material, extract key concepts, specify question structures, and generate complete, ready-to-print question sheets and answer keys using structured Google Gemini models.
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 The application is engineered as a highly decoupled, stateful multi-service environment:
 
@@ -33,22 +33,22 @@ The application is engineered as a highly decoupled, stateful multi-service envi
              └────────────────────────────┘
 ```
 
-- **Frontend Client**: Built on **Next.js 16 (App Router)** and **React 19**, styled using a sleek, dark-mode/glassmorphism design system in **Vanilla TailwindCSS**, complete with print layout overrides to isolate exam papers.
-- **Backend API Gateway**: Powered by **Express.js** running on the highly optimized **Bun/Node** runtime, providing robust controller validation, dynamic stats aggregate queries, and mongoose middleware.
-- **Background Worker Queue**: Leverages **BullMQ** running over **Redis 7** to process high-throughput generative AI question synthesis jobs asynchronously.
-- **Database Layer**: Persisted on **MongoDB 7** with strict indexing, schema validations, and transactional queries.
-- **AI Synthesis**: Powered by `gemini-2.5-flash` leveraging Google Developer API's **structured JSON response schemas** (`responseMimeType: "application/json"`).
+* **Frontend Client**: Built on **Next.js 16 (App Router)** and **React 19**, styled using a sleek, dark-mode/glassmorphism design system in **Vanilla TailwindCSS**, complete with print layout overrides to isolate exam papers.
+* **Backend API Gateway**: Powered by **Express.js** running on the highly optimized **Bun/Node** runtime, providing robust controller validation, dynamic stats aggregate queries, and mongoose middleware.
+* **Background Worker Queue**: Leverages **BullMQ** running over **Redis 7** to process high-throughput generative AI question synthesis jobs asynchronously.
+* **Database Layer**: Persisted on **MongoDB 7** with strict indexing, schema validations, and transactional queries.
+* **AI Synthesis Engine**: Powered by `gemini-2.5-flash` leveraging Google Developer API's **structured JSON response schemas** (`responseMimeType: "application/json"`) over `v1beta` HTTP endpoint.
 
 ---
 
-## 🔄 End-to-End Data & Execution Flow
+## End-to-End Data & Execution Flow
 
 Below is the detailed flow showing how text extraction, MongoDB job tracking, structured Gemini prompt generation, and **AI Credit Limits** interact:
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Teacher as 👩‍🏫 Dr. Sarah Jenkins
+    actor Teacher as Dr. Sarah Jenkins
     participant Client as Next.js Client
     participant Server as Express API
     participant DB as MongoDB
@@ -57,7 +57,7 @@ sequenceDiagram
     participant Gemini as Gemini AI API
 
     Teacher->>Client: Log in & Upload ClassNotes.pdf
-    Note over Client: Parses plain text / binary PDF stream<br/>locally using browser text extractors.
+    Note over Client: Dynamically loads Mozilla PDF.js from CDN<br/>to extract human-readable text page-by-page.
     Client->>Server: POST /api/assignments (with extracted fileContent)
     
     rect rgb(240, 240, 240)
@@ -102,7 +102,25 @@ sequenceDiagram
 
 ---
 
-## 🗃️ Database Schemas & Collections
+## Features
+
+### 1. Document & PDF Text Extraction
+* **Natively Parsed in Browser**: Integrated dynamic, asynchronous loading of Mozilla PDF.js via secure CDN within Next.js.
+* **Readable Plain Text Parsing**: When an educator uploads a binary PDF, the client extracts plain text page-by-page rather than submitting garbled binary data, sending clean text content (up to 25,000 characters) directly to Mongoose.
+* **Instructional Grounding**: Backend API prompts force the AI synthesis engine (`gemini-2.5-flash`) to generate questions derived directly from the uploaded material, ensuring that assessments verify comprehension of your class notes.
+
+### 2. Secure Admin Limits Console
+* **Dedicated Workspace**: Created a standalone, premium dark-glassmorphic Admin Console at `/admin` to let the platform administrator monitor teacher accounts, check their active credit balances, and refill their quotas.
+* **Security & Authentication**: Protected by credentials defined in environment variables (`ADMIN_USERNAME` and `ADMIN_PASSWORD`), supporting stateless header token validation (`Authorization: Bearer <password>`) to secure limits control.
+* **Refill Controls**: Admins can easily restore educator limits to the default of 3 credits or grant custom allocations (5, 10, 20, or 50 credits) via real-time DB transactions.
+
+### 3. Print & PDF Optimization
+* **Tailwind Print Classes**: The Next.js template leverages native `print:` modifiers to format papers for physical print or saving as PDF in standard A4 sizes.
+* **Zero UI Clutter**: Stripped unnecessary global styles that caused layout canvas conflicts, ensuring that headers, sidebars, action panels, and buttons automatically hide in print view, outputting only the pristine question paper.
+
+---
+
+## Database Schemas & Collections
 
 VedaAI maintains five interconnected MongoDB collections using Mongoose models:
 
@@ -165,7 +183,7 @@ The final generated examination sheet, completed with detailed section groupings
 
 ---
 
-## 🔒 The AI Generation Limit Rule
+## The AI Generation Limit Rule
 
 To simulate enterprise grade production tiers:
 1. **Verification**: When requesting an assignment (`POST /api/assignments`), the backend queries the database for the teacher's profile. If `generationCredits <= 0`, it instantly returns a `403 Forbidden` JSON response.
@@ -175,13 +193,14 @@ To simulate enterprise grade production tiers:
 
 ---
 
-## 🐳 Docker Deployment & Quick Start
+## Docker Deployment & Quick Start
 
 Deploying VedaAI locally is completely automated via Docker Compose.
 
 ### Prerequisites
 - **Docker** and **Docker Compose** installed.
-- A **Google Gemini Developer API Key** (Optional. If not supplied, the system auto-detects and triggers the highly robust, mathematical fallback test mock generator).
+- **Bun** (for frontend runtime packages).
+- A **Google Gemini Developer API Key** (supplied through environment variables to activate live generation).
 
 ---
 
@@ -197,35 +216,44 @@ cd backend
 cp .env.example .env
 ```
 
-Open `backend/.env` and add your Gemini API Key:
+Open `backend/.env` and add your Gemini API Key and Admin credentials:
 ```env
 PORT=5000
 MONGODB_URI=mongodb://mongodb:27017/vedaai
 REDIS_HOST=redis
 REDIS_PORT=6379
 GEMINI_API_KEY=your_google_gemini_api_key_here
+
+# Admin Portal Credentials
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your_secure_admin_password
 ```
 
 ---
 
 ### Step 2: Spin Up the Services
 
-Run Docker Compose from the `backend` directory to build and spin up MongoDB, Redis, the API server, and the queue background worker:
+Run the setup shell script inside the `backend` directory to clean, install dependencies, and launch MongoDB, Redis, the API server, and the queue worker inside Docker:
 
 ```bash
-docker compose up -d --build
+./scripts/setup.sh
+```
+
+To stop or rebuild manually, you can run:
+```bash
+docker compose down && docker compose up -d --build
 ```
 
 #### Verify Running Containers
-Check that all four core containers are up and healthy:
+Check that all core containers are up and healthy:
 ```bash
 docker ps
 ```
 You should see:
-- `vedaai-backend` running on port `5000`
-- `vedaai-worker` running the BullMQ task handlers
-- `vedaai-mongodb` running standard Mongo
-- `vedaai-redis` running internal cache and queue channels
+* `vedaai-backend` running on port `5000`
+* `vedaai-worker` running the BullMQ task handlers
+* `vedaai-mongodb` running standard Mongo
+* `vedaai-redis` running internal cache and queue channels
 
 ---
 
@@ -237,11 +265,11 @@ Go back to the root and navigate to the Next.js `frontend` directory. Install it
 # Go to frontend folder
 cd ../frontend
 
-# Install dependencies using Bun, Npm, or Yarn
-bun install  # or npm install
+# Install dependencies using Bun
+bun install
 
 # Start Next.js hot-reloading dev environment
-bun run dev  # or npm run dev
+bun run dev
 ```
 
 ---
@@ -250,5 +278,6 @@ bun run dev  # or npm run dev
 
 1. Open your browser and navigate to: **[http://localhost:3000](http://localhost:3000)**.
 2. The site will automatically redirect to the **`/login`** route.
-3. Click the premium **"Login as Dr. Sarah Jenkins"** simulated context button.
+3. Click the **"Login as Dr. Sarah Jenkins"** simulated context button.
 4. You will instantly enter the creator workspace at `/assignments/create` with a fully loaded balance of **`3 / 3` AI credits** ready to generate!
+5. To adjust credit limits or refill educator balances, visit **[http://localhost:3000/admin](http://localhost:3000/admin)** and log in with your configured admin credentials.

@@ -1,7 +1,7 @@
 /* Orchestrates assignment creation and background paper generation. */
 
 import { Types } from "mongoose";
-import { AssignmentModel } from "../models/Assignment";
+import { AssignmentModel, type AssignmentDocument } from "../models/Assignment";
 import { GenerationJobModel } from "../models/GenerationJob";
 import { GeneratedPaperModel } from "../models/GeneratedPaper";
 import { SchoolModel } from "../models/School";
@@ -29,7 +29,10 @@ interface QueuedAssignmentResult {
 
 interface AssignmentListItem {
   id: string;
+  paperId: string | null;
   title: string;
+  subject: string;
+  grade: string;
   status: AssignmentStatus;
   totalMarks: number;
   totalQuestions: number;
@@ -159,6 +162,8 @@ function parseCreateAssignmentPayload(payload: unknown): CreateAssignmentData {
     throw new Error("dueDate must be a valid ISO date");
   }
 
+  const grade = body.grade?.trim() || DEFAULT_ASSIGNMENT_GRADE;
+
   if (!Array.isArray(body.questionConfigs) || body.questionConfigs.length === 0) {
     throw new Error("questionConfigs must contain at least one item");
   }
@@ -186,6 +191,7 @@ function parseCreateAssignmentPayload(payload: unknown): CreateAssignmentData {
   return {
     teacherId: readObjectId(body.teacherId, "teacherId"),
     dueDate,
+    grade,
     instructions: readOptionalString(body.instructions),
     uploadedMaterial: readUploadedMaterial(body.uploadedMaterial),
     questionConfigs,
@@ -234,7 +240,7 @@ export class AssignmentService {
       schoolName: school.name,
       title,
       subject,
-      grade: DEFAULT_ASSIGNMENT_GRADE,
+      grade: data.grade,
       dueDate: data.dueDate,
       instructions: data.instructions,
       uploadedMaterial: data.uploadedMaterial,
@@ -305,6 +311,34 @@ export class AssignmentService {
     };
   }
 
+  static async getAssignmentById(assignmentId: string): Promise<AssignmentDocument | null> {
+    if (!Types.ObjectId.isValid(assignmentId)) {
+      return null;
+    }
+
+    return await AssignmentModel.findById(assignmentId).lean<AssignmentDocument | null>();
+  }
+
+  static async deleteAssignment(assignmentId: string): Promise<boolean> {
+    if (!Types.ObjectId.isValid(assignmentId)) {
+      return false;
+    }
+
+    const result = await AssignmentModel.findByIdAndDelete(assignmentId);
+
+    if (!result) {
+      return false;
+    }
+
+    // Clean up related documents
+    await Promise.all([
+      GeneratedPaperModel.deleteOne({ assignmentId }),
+      GenerationJobModel.deleteOne({ assignmentId }),
+    ]);
+
+    return true;
+  }
+
   static async listAssignmentsByTeacher(teacherId: string): Promise<AssignmentListItem[]> {
     if (!Types.ObjectId.isValid(teacherId)) {
       return [];
@@ -312,11 +346,13 @@ export class AssignmentService {
 
     const assignments = await AssignmentModel.find({ teacherId })
       .sort({ createdAt: -1 })
-      .select("title status totalMarks totalQuestions createdAt dueDate")
+      .select("title subject grade status totalMarks totalQuestions createdAt dueDate")
       .lean<
         Array<{
           _id: Types.ObjectId;
           title: string;
+          subject: string;
+          grade: string;
           status: AssignmentStatus;
           totalMarks: number;
           totalQuestions: number;
@@ -325,9 +361,23 @@ export class AssignmentService {
         }>
       >();
 
+    const assignmentIds = assignments.map((a) => a._id);
+    const papers = await GeneratedPaperModel.find({
+      assignmentId: { $in: assignmentIds },
+    })
+      .select("assignmentId _id")
+      .lean<{ assignmentId: Types.ObjectId; _id: Types.ObjectId }[]>();
+
+    const paperMap = new Map(
+      papers.map((p) => [String(p.assignmentId), String(p._id)])
+    );
+
     return assignments.map((assignment) => ({
       id: String(assignment._id),
+      paperId: paperMap.get(String(assignment._id)) ?? null,
       title: assignment.title,
+      subject: assignment.subject,
+      grade: assignment.grade,
       status: assignment.status,
       totalMarks: assignment.totalMarks,
       totalQuestions: assignment.totalQuestions,

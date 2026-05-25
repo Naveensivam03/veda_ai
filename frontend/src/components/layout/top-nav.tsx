@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { ArrowLeft, LayoutGrid, Bell, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Bell, Menu } from 'lucide-react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTeacher } from '@/hooks/use-teacher';
@@ -37,25 +37,39 @@ export function TopNav() {
   };
 
   return (
-    <div className="flex items-center justify-between bg-white/75 backdrop-blur-md rounded-[16px] h-[56px] px-6 py-3 shadow-sm mt-3 mb-6 font-[family-name:var(--font-bricolage)]">
-      <div className="flex items-center gap-6">
-        <button onClick={handleBack} className="text-zinc-400 hover:text-zinc-900 transition-colors cursor-pointer">
-          <ArrowLeft size={20} />
-        </button>
-        <div className="flex items-center gap-2 text-zinc-400">
-          <LayoutGrid size={20} />
-          <span className="text-sm font-medium">{sectionLabel}</span>
+    <div className="space-y-4 mb-6">
+      {/* Primary Global Nav Bar */}
+      <div className="flex items-center justify-between bg-white rounded-[24px] md:rounded-[16px] h-[64px] md:h-[56px] px-6 py-3 shadow-[0_2px_15px_rgba(0,0,0,0.03)] font-[family-name:var(--font-bricolage)]">
+        {/* Logo Area */}
+        <div className="flex items-center gap-2">
+          {/* Mobile Logo */}
+          <Image 
+            src="/navbar/mobileviewlogo.png" 
+            alt="VedaAI Logo" 
+            width={40} 
+            height={40} 
+            className="h-8 w-auto md:hidden"
+            priority
+          />
+          {/* Desktop Logo */}
+          <Image 
+            src="/navbar/wholelogo.png" 
+            alt="VedaAI Logo" 
+            width={120} 
+            height={36} 
+            className="hidden md:block h-10 w-auto"
+            priority
+          />
         </div>
-      </div>
 
-      <div className="flex items-center gap-6">
-        <div className="relative cursor-pointer">
-          <Bell size={20} className="text-zinc-900" />
-          <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-        </div>
-        
-        <div className="flex items-center gap-3 pl-6 border-l border-zinc-100 cursor-pointer group">
-          <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+        {/* Action Area */}
+        <div className="flex items-center gap-4 md:gap-6">
+          <div className="relative cursor-pointer hover:opacity-80 transition-opacity">
+            <Bell size={20} className="text-zinc-900" />
+            <div className="absolute top-0 right-0 w-2 h-2 bg-[#FF7950] rounded-full border-2 border-white" />
+          </div>
+          
+          <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-zinc-100 cursor-pointer">
             <Image 
               src={teacher?.avatarUrl || "/navbar/Avatar.png"} 
               alt={teacher?.fullName || "User"} 
@@ -65,9 +79,29 @@ export function TopNav() {
               unoptimized
             />
           </div>
-          <span className="text-sm font-bold text-zinc-900">{teacher?.fullName || "Loading..."}</span>
-          <ChevronDown size={16} className="text-zinc-400 group-hover:text-zinc-900 transition-colors" />
+
+          <button className="md:hidden text-zinc-900 cursor-pointer">
+            <Menu size={24} />
+          </button>
+          
+          <div className="hidden md:flex items-center gap-2 text-sm font-bold text-zinc-900 border-l border-zinc-100 pl-6">
+            <span>{teacher?.fullName || "Loading..."}</span>
+          </div>
         </div>
+      </div>
+
+      {/* Secondary Section Header (Mobile Only) */}
+      <div className="md:hidden flex items-center justify-between px-2">
+        <button 
+          onClick={handleBack}
+          className="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm text-zinc-900 cursor-pointer"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <h2 className="text-lg font-bold text-[#272727] font-[family-name:var(--font-bricolage)]">
+          {sectionLabel}
+        </h2>
+        <div className="w-10" /> {/* Spacer for centering */}
       </div>
     </div>
   );

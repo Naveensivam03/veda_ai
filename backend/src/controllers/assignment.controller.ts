@@ -55,6 +55,64 @@ export async function getAssignmentStatus(
   }
 }
 
+export async function getAssignment(
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> {
+  try {
+    const assignment = await AssignmentService.getAssignmentById(req.params.id);
+
+    if (!assignment) {
+      res.status(404).json({
+        success: false,
+        message: "Assignment not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: assignment,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch assignment";
+
+    res.status(500).json({
+      success: false,
+      message,
+    });
+  }
+}
+
+export async function deleteAssignment(
+  req: Request<{ id: string }>,
+  res: Response
+): Promise<void> {
+  try {
+    const success = await AssignmentService.deleteAssignment(req.params.id);
+
+    if (!success) {
+      res.status(404).json({
+        success: false,
+        message: "Assignment not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Assignment deleted successfully",
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete assignment";
+
+    res.status(500).json({
+      success: false,
+      message,
+    });
+  }
+}
+
 export async function listAssignments(
   req: Request<any, any, any>,
   res: Response

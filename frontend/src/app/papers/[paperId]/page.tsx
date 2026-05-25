@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { TopNav } from '@/components/layout/top-nav';
 import { PaperPreview } from '@/components/paper/paper-preview';
-import { Download, Sparkles, Printer } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { Paper } from '@/types/paper';
 import { getPaperByAssignmentId } from '@/services/paper.service';
+import { useTeacher } from '@/hooks/use-teacher';
 
 export default function PaperPage({ params }: { params: Promise<{ paperId: string }> }) {
+  const { teacher: teacherData } = useTeacher();
+  const paperRef = useRef<HTMLDivElement>(null);
   const [assignmentId, setAssignmentId] = useState<string | null>(null);
   const [paper, setPaper] = useState<Paper | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -72,15 +75,19 @@ export default function PaperPage({ params }: { params: Promise<{ paperId: strin
     };
   }, [assignmentId]);
 
-  // Trigger native browser printing dialog (lets user save directly as a clean PDF)
+  // Trigger native browser printing dialog (for PDF export)
   const handlePrint = () => {
     if (typeof window !== 'undefined') {
-      window.print();
+      try {
+        window.print();
+      } catch (err) {
+        console.error('Print failed:', err);
+      }
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen font-[family-name:var(--font-inter)] selection:bg-zinc-200/50 relative overflow-hidden pb-20 print:bg-white print:pb-0 select-none">
+    <div className="flex flex-col min-h-screen font-[family-name:var(--font-inter)] selection:bg-zinc-200/50 relative overflow-hidden print:overflow-visible pb-20 print:bg-white print:pb-0 select-none">
       {/* Decorative soft glowing glassmorphism backdrops */}
       <div className="absolute top-[20%] left-[10%] w-[380px] h-[380px] rounded-full bg-[#FF7950]/4 blur-[130px] pointer-events-none print:hidden" />
       <div className="absolute bottom-[15%] right-[5%] w-[480px] h-[480px] rounded-full bg-[#4BC26D]/5 blur-[150px] pointer-events-none print:hidden" />
@@ -90,7 +97,7 @@ export default function PaperPage({ params }: { params: Promise<{ paperId: strin
         <TopNav />
       </div>
 
-      <div className="max-w-[850px] w-full mx-auto px-4 md:px-0 space-y-8 mt-4 relative z-10">
+      <div className="max-w-[850px] w-full mx-auto px-4 md:px-0 space-y-6 mt-4 relative z-10 print:max-w-none print:m-0">
         {isLoading ? (
           <div className="bg-white/80 border border-white rounded-3xl p-10 text-center text-sm text-zinc-500 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
             Loading generated paper...
@@ -106,33 +113,32 @@ export default function PaperPage({ params }: { params: Promise<{ paperId: strin
 
         {/* Top Dark Action Banner */}
         {paper ? (
-        <div className="bg-[#1F1F1F] text-white rounded-2xl p-5 md:p-6 shadow-md border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-5 print:hidden animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="flex items-start gap-3.5 flex-1">
-            <div className="bg-white/10 rounded-full p-2.5 shrink-0 mt-0.5 border border-white/5">
-              <Sparkles size={16} className="text-[#FF7950]" />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">AI Gen Output</span>
-              <p className="text-xs md:text-sm font-medium text-zinc-200 leading-relaxed font-[family-name:var(--font-inter)]">
-                Your assignment paper has been generated and saved. Review the paper and print when ready.
-              </p>
-            </div>
+        <div className="bg-[#171717] text-white rounded-[32px] p-8 md:p-10 shadow-2xl border border-white/5 flex flex-col gap-6 print:hidden animate-in fade-in slide-in-from-top-4 duration-500 relative overflow-hidden action-banner">
+          {/* Subtle background glow inside the banner */}
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF7950]/10 blur-[80px] pointer-events-none" />
+          
+          <div className="space-y-3 relative z-10">
+            <h3 className="text-base md:text-lg font-medium text-zinc-100 leading-relaxed font-[family-name:var(--font-inter)]">
+              Certainly, {teacherData?.fullName.split(' ')[0] || 'Teacher'}! Here are customized Question Paper for your {paper.grade} {paper.subject} classes on the {paper.paperTitle.split('-')[0].trim() || 'requested'} chapters:
+            </h3>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0 select-none">
+          <div className="flex items-center gap-3 relative z-10">
             <button 
               onClick={handlePrint}
-              className="flex items-center gap-2 px-5 py-3 bg-[#FF7950] hover:bg-[#e05f36] text-white rounded-full text-xs font-bold shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer font-[family-name:var(--font-bricolage)]"
+              className="flex items-center gap-2.5 px-6 py-3 bg-white hover:bg-zinc-100 text-[#171717] rounded-full text-sm font-bold shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer font-[family-name:var(--font-bricolage)]"
+              disabled={isLoading}
             >
-              <Download size={14} />
+              <Download size={18} />
               <span>Download as PDF</span>
             </button>
             <button 
               onClick={handlePrint}
-              className="p-3 bg-white/10 hover:bg-white/15 text-white border border-white/10 rounded-full shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+              className="p-3 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-full shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
               title="Print Examination Sheet"
+              disabled={isLoading}
             >
-              <Printer size={14} />
+              <Printer size={18} />
             </button>
           </div>
         </div>
@@ -140,7 +146,7 @@ export default function PaperPage({ params }: { params: Promise<{ paperId: strin
 
         {/* Centered Printable Paper Canvas */}
         {paper ? (
-          <div className="pb-16 animate-in fade-in slide-in-from-bottom-5 duration-700 delay-200">
+          <div ref={paperRef} className="pb-16 animate-in fade-in slide-in-from-bottom-5 duration-700 delay-200 print:pb-0">
             <PaperPreview paper={paper} />
           </div>
         ) : null}

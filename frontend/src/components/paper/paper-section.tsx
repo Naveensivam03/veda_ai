@@ -8,23 +8,32 @@ interface PaperSectionProps {
 
 export function PaperSection({ section }: PaperSectionProps) {
   return (
-    <div className="space-y-4 pt-6">
-      {/* Section Header */}
-      <div className="text-center space-y-1 pb-2 border-b border-[#171717] mt-6 select-none">
-        <h3 className="text-sm font-bold text-[#171717] tracking-widest uppercase font-[family-name:var(--font-bricolage)]">
+    <div className="space-y-6 pt-4">
+      {/* Section Identifier (e.g. Section A) */}
+      <div className="text-center select-none py-4">
+        <h3 className="text-xl md:text-2xl font-bold text-[#171717] font-[family-name:var(--font-bricolage)]">
           {section.title}
         </h3>
+      </div>
+
+      {/* Section Heading & Instructions */}
+      <div className="space-y-1 select-none">
+        <h4 className="text-base md:text-lg font-bold text-[#171717]">
+          {section.type === 'mcq' ? 'Multiple Choice Questions' : 
+           section.type === 'short' ? 'Short Answer Questions' : 
+           section.type === 'long' ? 'Long/Essay Questions' : 'True / False Questions'}
+        </h4>
         {section.instruction && (
-          <p className="text-[11px] font-semibold text-zinc-400 font-[family-name:var(--font-inter)] italic">
-            ({section.instruction})
+          <p className="text-sm md:text-base font-medium text-zinc-500 italic">
+            {section.instruction}
           </p>
         )}
       </div>
 
       {/* Question List */}
-      <div className="divide-y divide-zinc-100/60">
-        {section.questions.map((question) => (
-          <QuestionRow key={question.id} question={question} />
+      <div className="space-y-4">
+        {section.questions.map((question, idx) => (
+          <QuestionRow key={question.id} question={question} index={idx + 1} />
         ))}
       </div>
     </div>
