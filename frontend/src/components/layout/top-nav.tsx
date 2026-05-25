@@ -37,7 +37,7 @@ export function TopNav() {
   };
 
   return (
-    <div className="space-y-4 mb-6 pt-4 md:pt-0">
+    <div className="space-y-4 mb-6 pt-5 md:pt-0">
       {/* Primary Global Nav Bar */}
       <div className="flex items-center justify-between bg-white rounded-[24px] md:rounded-[16px] h-[64px] md:h-[56px] px-6 py-3 shadow-[0_2px_15px_rgba(0,0,0,0.03)] font-[family-name:var(--font-bricolage)]">
         {/* Logo Area */}
