@@ -7,6 +7,8 @@ interface PaperSectionProps {
 }
 
 export function PaperSection({ section }: PaperSectionProps) {
+  const sectionType = section.questions[0]?.type;
+
   return (
     <div className="space-y-6 pt-4">
       {/* Section Identifier (e.g. Section A) */}
@@ -19,9 +21,9 @@ export function PaperSection({ section }: PaperSectionProps) {
       {/* Section Heading & Instructions */}
       <div className="space-y-1 select-none">
         <h4 className="text-base md:text-lg font-bold text-[#171717]">
-          {section.type === 'mcq' ? 'Multiple Choice Questions' : 
-           section.type === 'short' ? 'Short Answer Questions' : 
-           section.type === 'long' ? 'Long/Essay Questions' : 'True / False Questions'}
+          {sectionType === 'mcq' ? 'Multiple Choice Questions' : 
+           sectionType === 'short' ? 'Short Answer Questions' : 
+           sectionType === 'long' ? 'Long/Essay Questions' : 'True / False Questions'}
         </h4>
         {section.instruction && (
           <p className="text-sm md:text-base font-medium text-zinc-500 italic">
