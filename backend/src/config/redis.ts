@@ -4,17 +4,22 @@ import IORedis from "ioredis";
 import { env } from "./env";
 import { logger } from "../utils/logger";
 
-export const redisConnection = new IORedis({
-  host: env.REDIS_HOST,
-  port: env.REDIS_PORT,
-  maxRetriesPerRequest: null,
-  enableReadyCheck: true,
-});
+export const redisConnection = env.REDIS_URL
+  ? new IORedis(env.REDIS_URL, {
+      maxRetriesPerRequest: null,
+      enableReadyCheck: true,
+    })
+  : new IORedis({
+      host: env.REDIS_HOST,
+      port: env.REDIS_PORT,
+      maxRetriesPerRequest: null,
+      enableReadyCheck: true,
+    });
 
 redisConnection.on("connect", () => {
   logger.info("Redis connected", {
-    host: env.REDIS_HOST,
-    port: env.REDIS_PORT,
+    host: redisConnection.options.host,
+    port: redisConnection.options.port,
   });
 });
 

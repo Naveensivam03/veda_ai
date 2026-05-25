@@ -1,0 +1,33 @@
+# Build stage
+FROM oven/bun:1-slim as builder
+
+WORKDIR /app
+
+# Copy lock and config files
+COPY package.json bun.lock tsconfig.json ./
+# Copy source code
+COPY src ./src
+
+# Install dependencies with frozen lockfile
+RUN bun install --frozen-lockfile
+
+# Final production stage
+FROM oven/bun:1-slim
+
+WORKDIR /app
+
+# Install Redis server
+RUN apt-get update && apt-get install -y redis-server && rm -rf /var/lib/apt/lists/*
+
+# Copy build artifacts and source code from builder
+COPY --from=builder /app /app
+
+# Copy production startup script
+COPY start-prod.sh ./
+RUN chmod +x start-prod.sh
+
+# Expose Express server port (defaults to 5000, cloud provider will inject custom PORT if needed)
+EXPOSE 5000
+
+# Execute the multi-process startup script
+CMD ["./start-prod.sh"]

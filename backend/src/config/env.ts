@@ -31,11 +31,25 @@ function readOptionalString(name: string): string | null {
   return value ? value : null;
 }
 
+const redisUrl = readOptionalString("REDIS_URL");
+const redisHost = readOptionalString("REDIS_HOST");
+const redisPortString = readOptionalString("REDIS_PORT");
+
+if (!redisUrl && (!redisHost || !redisPortString)) {
+  throw new Error("Either REDIS_URL or both REDIS_HOST and REDIS_PORT must be provided");
+}
+
+const redisPort = redisPortString ? Number.parseInt(redisPortString, 10) : undefined;
+if (redisPortString && (!redisPort || !Number.isFinite(redisPort))) {
+  throw new Error("REDIS_PORT must be a valid number");
+}
+
 export const env = Object.freeze({
   PORT: readRequiredNumber("PORT"),
   MONGODB_URI: readRequiredString("MONGODB_URI"),
-  REDIS_HOST: readRequiredString("REDIS_HOST"),
-  REDIS_PORT: readRequiredNumber("REDIS_PORT"),
+  REDIS_URL: redisUrl,
+  REDIS_HOST: redisHost,
+  REDIS_PORT: redisPort,
   GEMINI_API_KEY: readOptionalString("GEMINI_API_KEY"),
   ADMIN_USERNAME: readOptionalString("ADMIN_USERNAME") || "admin",
   ADMIN_PASSWORD: readOptionalString("ADMIN_PASSWORD") || "vedaai-admin-secret",

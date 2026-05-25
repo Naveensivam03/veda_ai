@@ -9,3 +9,5 @@ COPY .env.example ./.env.example
 RUN bun install --frozen-lockfile
 
 EXPOSE 5000
+
+CMD ["bun", "run", "start"]

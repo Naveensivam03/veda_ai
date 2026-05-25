@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bun --watch src/server.ts",
     "worker": "bun --watch src/workers/paper.worker.ts",
+    "worker:prod": "bun src/workers/paper.worker.ts",
     "start": "bun src/server.ts",
     "typecheck": "tsc --noEmit"
   },
